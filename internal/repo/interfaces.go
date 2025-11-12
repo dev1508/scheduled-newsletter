@@ -66,3 +66,11 @@ type JobRepository interface {
 	UpdateStatusWithError(ctx context.Context, id uuid.UUID, status string, attempts int, errorMessage *string) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
+
+// DeliveryRepository defines the interface for delivery data operations
+type DeliveryRepository interface {
+	CreateDelivery(ctx context.Context, contentID, subscriberID uuid.UUID, email, status string) (*models.Delivery, error)
+	UpdateDeliveryStatus(ctx context.Context, id uuid.UUID, status string, sentAt *time.Time, errorMessage *string) error
+	GetDeliveryByContentAndSubscriber(ctx context.Context, contentID, subscriberID uuid.UUID) (*models.Delivery, error)
+	ListDeliveriesByContent(ctx context.Context, contentID uuid.UUID) ([]*models.Delivery, error)
+}

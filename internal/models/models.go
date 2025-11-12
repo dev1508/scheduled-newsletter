@@ -57,6 +57,7 @@ type Delivery struct {
 	SentAt       *time.Time `json:"sent_at" db:"sent_at"`
 	ErrorMessage *string    `json:"error_message" db:"error_message"`
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // JobScheduler represents a scheduled job

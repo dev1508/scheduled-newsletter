@@ -9,6 +9,7 @@ import (
 	"newsletter-assignment/internal/config"
 	"newsletter-assignment/internal/constants"
 	"newsletter-assignment/internal/db"
+	"newsletter-assignment/internal/email"
 	"newsletter-assignment/internal/log"
 	"newsletter-assignment/internal/queue"
 	"newsletter-assignment/internal/repo"
@@ -50,6 +51,18 @@ func main() {
 	subscriptionRepo := repo.NewSubscriptionRepository(database)
 	subscriberRepo := repo.NewSubscriberRepository(database)
 	jobRepo := repo.NewJobRepository(database)
+	deliveryRepo := repo.NewDeliveryRepository(database)
+
+	// Initialize SMTP sender
+	smtpConfig := &email.SMTPConfig{
+		Host:      cfg.SMTP.Host,
+		Port:      cfg.SMTP.Port,
+		Username:  cfg.SMTP.Username,
+		Password:  cfg.SMTP.Password,
+		FromEmail: cfg.SMTP.FromEmail,
+		FromName:  cfg.SMTP.FromName,
+	}
+	emailSender := email.NewSMTPSender(smtpConfig, logger)
 
 	// Initialize worker
 	sendContentWorker := worker.NewSendContentWorker(
@@ -57,6 +70,8 @@ func main() {
 		subscriptionRepo,
 		subscriberRepo,
 		jobRepo,
+		deliveryRepo,
+		emailSender,
 		logger,
 	)
 

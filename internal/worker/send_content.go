@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
 	"newsletter-assignment/internal/constants"
+	"newsletter-assignment/internal/email"
+	"newsletter-assignment/internal/models"
 	"newsletter-assignment/internal/repo"
 
 	"github.com/google/uuid"
@@ -13,12 +17,20 @@ import (
 	"go.uber.org/zap"
 )
 
+// subscriberData holds subscriber information for email sending
+type subscriberData struct {
+	ID    uuid.UUID
+	Email string
+}
+
 // SendContentWorker handles sending newsletter content to subscribers
 type SendContentWorker struct {
 	contentRepo      repo.ContentRepository
 	subscriptionRepo repo.SubscriptionRepository
 	subscriberRepo   repo.SubscriberRepository
 	jobRepo          repo.JobRepository
+	deliveryRepo     repo.DeliveryRepository
+	emailSender      *email.SMTPSender
 	logger           *zap.Logger
 }
 
@@ -28,6 +40,8 @@ func NewSendContentWorker(
 	subscriptionRepo repo.SubscriptionRepository,
 	subscriberRepo repo.SubscriberRepository,
 	jobRepo repo.JobRepository,
+	deliveryRepo repo.DeliveryRepository,
+	emailSender *email.SMTPSender,
 	logger *zap.Logger,
 ) *SendContentWorker {
 	return &SendContentWorker{
@@ -35,6 +49,8 @@ func NewSendContentWorker(
 		subscriptionRepo: subscriptionRepo,
 		subscriberRepo:   subscriberRepo,
 		jobRepo:          jobRepo,
+		deliveryRepo:     deliveryRepo,
+		emailSender:      emailSender,
 		logger:           logger,
 	}
 }
@@ -72,57 +88,53 @@ func (w *SendContentWorker) HandleSendContent(ctx context.Context, task *asynq.T
 	content, err := w.contentRepo.GetByID(ctx, contentID)
 	if err != nil {
 		w.logger.Error("Failed to fetch content", zap.String("content_id", contentID.String()), zap.Error(err))
-		
+
 		// Update job status to failed
 		errorMsg := fmt.Sprintf("Failed to fetch content: %v", err)
 		w.jobRepo.UpdateStatusWithError(ctx, jobID, constants.JobStatusFailed, 1, &errorMsg)
-		
+
 		return fmt.Errorf("failed to fetch content: %w", err)
 	}
 
 	// Fetch active subscriptions for this topic
 	subscriptions, err := w.subscriptionRepo.ListByTopic(ctx, content.TopicID)
 	if err != nil {
-		w.logger.Error("Failed to fetch subscriptions", 
-			zap.String("topic_id", content.TopicID.String()), 
+		w.logger.Error("Failed to fetch subscriptions",
+			zap.String("topic_id", content.TopicID.String()),
 			zap.Error(err),
 		)
-		
+
 		// Update job status to failed
 		errorMsg := fmt.Sprintf("Failed to fetch subscriptions: %v", err)
 		w.jobRepo.UpdateStatusWithError(ctx, jobID, constants.JobStatusFailed, 1, &errorMsg)
-		
+
 		return fmt.Errorf("failed to fetch subscriptions: %w", err)
 	}
 
-	// Filter active subscriptions and get subscriber count
+	// Filter active subscriptions and collect subscriber data
 	activeSubscribers := 0
-	subscriberEmails := make([]string, 0)
+	subscribersData := make([]subscriberData, 0)
 
 	for _, subscription := range subscriptions {
 		if subscription.IsActive {
 			subscriber, err := w.subscriberRepo.GetByID(ctx, subscription.SubscriberID)
 			if err != nil {
-				w.logger.Warn("Failed to fetch subscriber", 
+				w.logger.Warn("Failed to fetch subscriber",
 					zap.String("subscriber_id", subscription.SubscriberID.String()),
 					zap.Error(err),
 				)
 				continue
 			}
 			activeSubscribers++
-			subscriberEmails = append(subscriberEmails, subscriber.Email)
+			subscribersData = append(subscribersData, subscriberData{
+				ID:    subscriber.ID,
+				Email: subscriber.Email,
+			})
 		}
 	}
 
-	// Log the dry-run execution (no actual email sending yet)
-	w.logger.Info("Would send content to subscribers",
-		zap.String("content_id", content.ID.String()),
-		zap.String("subject", content.Subject),
-		zap.String("topic_id", content.TopicID.String()),
-		zap.Int("subscriber_count", activeSubscribers),
-		zap.Strings("subscriber_emails", subscriberEmails),
-		zap.Time("scheduled_at", content.SendAt),
-	)
+	// Send emails in parallel with actual SMTP sending
+	w.sendEmailsInParallel(ctx, content, subscribersData)
 
 	// Simulate processing time and success
 	w.logger.Info("Content processing completed successfully",
@@ -149,4 +161,101 @@ func (w *SendContentWorker) HandleSendContent(ctx context.Context, task *asynq.T
 	)
 
 	return nil
+}
+
+// sendEmailsInParallel sends emails to multiple subscribers concurrently
+func (w *SendContentWorker) sendEmailsInParallel(ctx context.Context, content *models.Content, subscribers []subscriberData) {
+	const maxConcurrency = 20 // Increased concurrency for better performance
+
+	// Create a semaphore to limit concurrency
+	semaphore := make(chan struct{}, maxConcurrency)
+	var wg sync.WaitGroup
+
+	w.logger.Info("Starting parallel email sending",
+		zap.Int("total_emails", len(subscribers)),
+		zap.Int("max_concurrency", maxConcurrency),
+	)
+
+	for i, subscriber := range subscribers {
+		wg.Add(1)
+
+		go func(sub subscriberData, index int) {
+			defer wg.Done()
+
+			// Acquire semaphore (limit concurrency)
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			// Send email with actual SMTP
+			w.sendSingleEmail(ctx, content, sub.Email, sub.ID, index)
+		}(subscriber, i)
+	}
+
+	// Wait for all emails to be sent
+	wg.Wait()
+
+	w.logger.Info("Parallel email sending completed",
+		zap.Int("total_emails", len(subscribers)),
+	)
+}
+
+// sendSingleEmail sends an email to a single subscriber and tracks delivery
+func (w *SendContentWorker) sendSingleEmail(ctx context.Context, content *models.Content, subscriberEmail string, subscriberID uuid.UUID, index int) {
+	start := time.Now()
+
+	// Create delivery record
+	delivery, err := w.deliveryRepo.CreateDelivery(ctx, content.ID, subscriberID, subscriberEmail, constants.DeliveryStatusPending)
+	if err != nil {
+		w.logger.Error("Failed to create delivery record",
+			zap.String("content_id", content.ID.String()),
+			zap.String("subscriber_email", subscriberEmail),
+			zap.Error(err),
+		)
+		return
+	}
+
+	// Prepare email request
+	emailReq := &email.EmailRequest{
+		To:       subscriberEmail,
+		Subject:  content.Subject,
+		HTMLBody: content.Body, // Assuming content.Body contains HTML
+		TextBody: content.Body, // For now, use same content for text
+	}
+
+	// Send email via SMTP
+	err = w.emailSender.Send(emailReq)
+
+	// Update delivery status based on result
+	now := time.Now()
+	if err != nil {
+		// Email failed
+		errorMsg := err.Error()
+		updateErr := w.deliveryRepo.UpdateDeliveryStatus(ctx, delivery.ID, constants.DeliveryStatusFailed, nil, &errorMsg)
+		if updateErr != nil {
+			w.logger.Error("Failed to update delivery status to failed", zap.Error(updateErr))
+		}
+
+		w.logger.Error("Failed to send email",
+			zap.String("content_id", content.ID.String()),
+			zap.String("recipient", subscriberEmail),
+			zap.String("delivery_id", delivery.ID.String()),
+			zap.Int("email_index", index),
+			zap.Duration("send_duration", time.Since(start)),
+			zap.Error(err),
+		)
+	} else {
+		// Email sent successfully
+		updateErr := w.deliveryRepo.UpdateDeliveryStatus(ctx, delivery.ID, constants.DeliveryStatusSent, &now, nil)
+		if updateErr != nil {
+			w.logger.Error("Failed to update delivery status to sent", zap.Error(updateErr))
+		}
+
+		w.logger.Info("Email sent successfully",
+			zap.String("content_id", content.ID.String()),
+			zap.String("recipient", subscriberEmail),
+			zap.String("delivery_id", delivery.ID.String()),
+			zap.Int("email_index", index),
+			zap.Duration("send_duration", time.Since(start)),
+		)
+	}
 }
