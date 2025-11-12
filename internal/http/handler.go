@@ -9,12 +9,20 @@ import (
 )
 
 type Handler struct {
-	topicHandler *handler.TopicHandler
+	topicHandler        *handler.TopicHandler
+	subscriberHandler   *handler.SubscriberHandler
+	subscriptionHandler *handler.SubscriptionHandler
 }
 
-func NewHandler(topicHandler *handler.TopicHandler) *Handler {
+func NewHandler(
+	topicHandler *handler.TopicHandler,
+	subscriberHandler *handler.SubscriberHandler,
+	subscriptionHandler *handler.SubscriptionHandler,
+) *Handler {
 	return &Handler{
-		topicHandler: topicHandler,
+		topicHandler:        topicHandler,
+		subscriberHandler:   subscriberHandler,
+		subscriptionHandler: subscriptionHandler,
 	}
 }
 
@@ -38,6 +46,31 @@ func (h *Handler) SetupRoutes() *gin.Engine {
 			topics.PUT("/:id", h.topicHandler.UpdateTopic)
 			topics.DELETE("/:id", h.topicHandler.DeleteTopic)
 		}
+
+		// Subscriber routes
+		subscribers := v1.Group("/subscribers")
+		{
+			subscribers.POST("", h.subscriberHandler.CreateSubscriber)
+			subscribers.GET("", h.subscriberHandler.ListSubscribers)
+			subscribers.GET("/search", h.subscriberHandler.GetSubscriberByEmail) // ?email=user@example.com
+			subscribers.GET("/:id", h.subscriberHandler.GetSubscriber)
+			subscribers.PUT("/:id", h.subscriberHandler.UpdateSubscriber)
+			subscribers.DELETE("/:id", h.subscriberHandler.DeleteSubscriber)
+		}
+
+		// Subscription routes
+		subscriptions := v1.Group("/subscriptions")
+		{
+			subscriptions.POST("", h.subscriptionHandler.Subscribe)
+			subscriptions.GET("/:id", h.subscriptionHandler.GetSubscription)
+			subscriptions.DELETE("/:subscriber_id/:topic_id", h.subscriptionHandler.Unsubscribe)
+		}
+
+		// Subscriber-specific subscription routes
+		v1.GET("/subscribers/:subscriber_id/topics", h.subscriptionHandler.ListSubscriberTopics)
+		
+		// Topic-specific subscription routes
+		v1.GET("/topics/:topic_id/subscribers", h.subscriptionHandler.ListTopicSubscribers)
 	}
 
 	return router

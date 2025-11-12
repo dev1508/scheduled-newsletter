@@ -51,15 +51,21 @@ func main() {
 
 	// Initialize repositories
 	topicRepo := repo.NewTopicRepository(database)
+	subscriberRepo := repo.NewSubscriberRepository(database)
+	subscriptionRepo := repo.NewSubscriptionRepository(database)
 
 	// Initialize services
 	topicService := service.NewTopicService(topicRepo, logger)
+	subscriberService := service.NewSubscriberService(subscriberRepo, logger)
+	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriberRepo, topicRepo, logger)
 
 	// Initialize handlers
 	topicHandler := handler.NewTopicHandler(topicService, logger)
+	subscriberHandler := handler.NewSubscriberHandler(subscriberService, logger)
+	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService, logger)
 
 	// Initialize HTTP handler with dependencies
-	httpHandler := httphandler.NewHandler(topicHandler)
+	httpHandler := httphandler.NewHandler(topicHandler, subscriberHandler, subscriptionHandler)
 	router := httpHandler.SetupRoutes()
 
 	srv := &http.Server{
