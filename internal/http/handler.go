@@ -12,17 +12,20 @@ type Handler struct {
 	topicHandler        *handler.TopicHandler
 	subscriberHandler   *handler.SubscriberHandler
 	subscriptionHandler *handler.SubscriptionHandler
+	contentHandler      *handler.ContentHandler
 }
 
 func NewHandler(
 	topicHandler *handler.TopicHandler,
 	subscriberHandler *handler.SubscriberHandler,
 	subscriptionHandler *handler.SubscriptionHandler,
+	contentHandler *handler.ContentHandler,
 ) *Handler {
 	return &Handler{
 		topicHandler:        topicHandler,
 		subscriberHandler:   subscriberHandler,
 		subscriptionHandler: subscriptionHandler,
+		contentHandler:      contentHandler,
 	}
 }
 
@@ -48,6 +51,9 @@ func (h *Handler) SetupRoutes() *gin.Engine {
 			
 			// Topic-specific subscription routes
 			topics.GET("/:topic_id/subscribers", h.subscriptionHandler.ListTopicSubscribers)
+			
+			// Topic-specific content routes
+			topics.GET("/:topic_id/content", h.contentHandler.ListContentByTopic)
 		}
 
 		// Subscriber routes
@@ -70,6 +76,17 @@ func (h *Handler) SetupRoutes() *gin.Engine {
 			subscriptions.POST("", h.subscriptionHandler.Subscribe)
 			subscriptions.GET("/:id", h.subscriptionHandler.GetSubscription)
 			subscriptions.DELETE("/:subscriber_id/:topic_id", h.subscriptionHandler.Unsubscribe)
+		}
+
+		// Content routes
+		content := v1.Group("/content")
+		{
+			content.POST("", h.contentHandler.CreateContent)
+			content.GET("", h.contentHandler.ListContent)
+			content.GET("/:id", h.contentHandler.GetContent)
+			content.PUT("/:id", h.contentHandler.UpdateContent)
+			content.DELETE("/:id", h.contentHandler.DeleteContent)
+			content.POST("/:id/schedule", h.contentHandler.ScheduleContent)
 		}
 	}
 
