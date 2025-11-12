@@ -37,6 +37,17 @@ type Config struct {
 		FromEmail string
 		FromName  string
 	}
+
+	Scheduler struct {
+		Interval  string
+		BatchSize int
+	}
+
+	Asynq struct {
+		RedisAddr     string
+		RedisPassword string
+		RedisDB       int
+	}
 }
 
 func Load() (*Config, error) {
@@ -68,6 +79,13 @@ func Load() (*Config, error) {
 	cfg.SMTP.FromEmail = getEnv(constants.EnvKeySMTPFromEmail, constants.DefaultSMTPFromEmail)
 	cfg.SMTP.FromName = getEnv(constants.EnvKeySMTPFromName, constants.DefaultSMTPFromName)
 
+	cfg.Scheduler.Interval = getEnv(constants.EnvKeySchedulerInterval, constants.DefaultSchedulerInterval)
+	cfg.Scheduler.BatchSize = getEnvInt(constants.EnvKeySchedulerBatchSize, constants.DefaultSchedulerBatchSize)
+
+	cfg.Asynq.RedisAddr = getEnv(constants.EnvKeyAsynqRedisAddr, constants.DefaultRedisHost+":"+constants.DefaultRedisPort)
+	cfg.Asynq.RedisPassword = getEnv(constants.EnvKeyAsynqRedisPassword, "")
+	cfg.Asynq.RedisDB = getEnvInt(constants.EnvKeyAsynqRedisDB, 0)
+
 	return cfg, nil
 }
 
@@ -78,10 +96,10 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func getEnvAsInt(key string, defaultValue int) int {
+func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
-		if intVal, err := strconv.Atoi(value); err == nil {
-			return intVal
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
 		}
 	}
 	return defaultValue

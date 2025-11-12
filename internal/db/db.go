@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
@@ -59,4 +60,8 @@ func (db *DB) Close() {
 
 func (db *DB) Health(ctx context.Context) error {
 	return db.Pool.Ping(ctx)
+}
+
+func (db *DB) Begin(ctx context.Context) (pgx.Tx, error) {
+	return db.Pool.Begin(ctx)
 }

@@ -9,6 +9,7 @@ import (
 	"newsletter-assignment/internal/response"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // TopicRepository defines the interface for topic data operations
@@ -45,6 +46,7 @@ type SubscriptionRepository interface {
 // ContentRepository defines the interface for content data operations
 type ContentRepository interface {
 	Create(ctx context.Context, req *request.CreateContentRequest) (*models.Content, error)
+	CreateTx(ctx context.Context, tx pgx.Tx, req *request.CreateContentRequest) (*models.Content, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Content, error)
 	List(ctx context.Context, limit, offset int) ([]*models.Content, error)
 	ListByTopic(ctx context.Context, topicID uuid.UUID, limit, offset int) ([]*models.Content, error)
@@ -64,11 +66,14 @@ type DeliveryRepository interface {
 	GetStats(ctx context.Context, contentID uuid.UUID) (*response.DeliveryStats, error)
 }
 
-// JobSchedulerRepository defines the interface for job scheduler data operations
-type JobSchedulerRepository interface {
+// JobRepository defines the interface for job scheduler data operations
+type JobRepository interface {
 	Create(ctx context.Context, req *request.CreateJobRequest) (*models.JobScheduler, error)
+	CreateTx(ctx context.Context, tx pgx.Tx, contentID uuid.UUID, jobType string, scheduledAt time.Time) (*models.JobScheduler, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.JobScheduler, error)
 	GetPendingJobs(ctx context.Context, limit int) ([]*models.JobScheduler, error)
-	UpdateStatus(ctx context.Context, id uuid.UUID, status string, attempts int, errorMessage *string) error
+	List(ctx context.Context, limit, offset int) ([]*models.JobScheduler, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
+	UpdateStatusWithError(ctx context.Context, id uuid.UUID, status string, attempts int, errorMessage *string) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }

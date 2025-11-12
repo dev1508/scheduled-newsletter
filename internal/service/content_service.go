@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"newsletter-assignment/internal/constants"
+	"newsletter-assignment/internal/db"
 	"newsletter-assignment/internal/models"
 	"newsletter-assignment/internal/repo"
 	"newsletter-assignment/internal/request"
@@ -18,17 +19,23 @@ import (
 type contentService struct {
 	contentRepo repo.ContentRepository
 	topicRepo   repo.TopicRepository
+	jobRepo     repo.JobRepository
+	db          *db.DB
 	logger      *zap.Logger
 }
 
 func NewContentService(
 	contentRepo repo.ContentRepository,
 	topicRepo repo.TopicRepository,
+	jobRepo repo.JobRepository,
+	database *db.DB,
 	logger *zap.Logger,
 ) ContentService {
 	return &contentService{
 		contentRepo: contentRepo,
 		topicRepo:   topicRepo,
+		jobRepo:     jobRepo,
+		db:          database,
 		logger:      logger,
 	}
 }
@@ -57,23 +64,46 @@ func (s *contentService) CreateContent(ctx context.Context, req *request.CreateC
 		return nil, fmt.Errorf("topic not found")
 	}
 
-	s.logger.Info("Creating content",
+	s.logger.Info("Creating content with job",
 		zap.String("topic_name", topic.Name),
 		zap.String("subject", req.Subject),
 		zap.Time("send_at", req.SendAt),
 	)
 
-	content, err := s.contentRepo.Create(ctx, req)
+	// Start transaction
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		s.logger.Error("Failed to begin transaction", zap.Error(err))
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Create content within transaction
+	content, err := s.contentRepo.CreateTx(ctx, tx, req)
 	if err != nil {
 		s.logger.Error("Failed to create content", zap.Error(err))
 		return nil, err
 	}
 
-	s.logger.Info("Content created successfully",
-		zap.String("id", content.ID.String()),
+	// Create job within same transaction
+	_, err = s.jobRepo.CreateTx(ctx, tx, content.ID, constants.JobTypeSendNewsletter, content.SendAt)
+	if err != nil {
+		s.logger.Error("Failed to create job", zap.Error(err))
+		return nil, fmt.Errorf("failed to create job: %w", err)
+	}
+
+	// Commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		s.logger.Error("Failed to commit transaction", zap.Error(err))
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	s.logger.Info("Content and job created successfully",
+		zap.String("content_id", content.ID.String()),
 		zap.String("topic_name", topic.Name),
 		zap.String("subject", content.Subject),
 		zap.String("status", content.Status),
+		zap.Time("send_at", content.SendAt),
 	)
 
 	return content, nil

@@ -15,6 +15,8 @@ import (
 	httphandler "newsletter-assignment/internal/http"
 	"newsletter-assignment/internal/log"
 	"newsletter-assignment/internal/repo"
+	"newsletter-assignment/internal/queue"
+	"newsletter-assignment/internal/scheduler"
 	"newsletter-assignment/internal/service"
 	"newsletter-assignment/internal/version"
 
@@ -54,18 +56,37 @@ func main() {
 	subscriberRepo := repo.NewSubscriberRepository(database)
 	subscriptionRepo := repo.NewSubscriptionRepository(database)
 	contentRepo := repo.NewContentRepository(database)
+	jobRepo := repo.NewJobRepository(database)
 
 	// Initialize services
 	topicService := service.NewTopicService(topicRepo, logger)
 	subscriberService := service.NewSubscriberService(subscriberRepo, logger)
 	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriberRepo, topicRepo, logger)
-	contentService := service.NewContentService(contentRepo, topicRepo, logger)
+	contentService := service.NewContentService(contentRepo, topicRepo, jobRepo, database, logger)
 
 	// Initialize handlers
 	topicHandler := handler.NewTopicHandler(topicService, logger)
 	subscriberHandler := handler.NewSubscriberHandler(subscriberService, logger)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService, logger)
 	contentHandler := handler.NewContentHandler(contentService, logger)
+
+	// Initialize queue
+	jobQueue := queue.NewAsynqQueue(
+		cfg.Asynq.RedisAddr,
+		cfg.Asynq.RedisPassword,
+		cfg.Asynq.RedisDB,
+		logger,
+	)
+	defer jobQueue.Close()
+
+	// Parse scheduler interval
+	schedulerInterval, err := time.ParseDuration(cfg.Scheduler.Interval)
+	if err != nil {
+		logger.Fatal("Invalid scheduler interval", zap.String("interval", cfg.Scheduler.Interval), zap.Error(err))
+	}
+
+	// Initialize scheduler
+	jobScheduler := scheduler.NewScheduler(jobRepo, jobQueue, logger, schedulerInterval, cfg.Scheduler.BatchSize)
 
 	// Initialize HTTP handler with dependencies
 	httpHandler := httphandler.NewHandler(topicHandler, subscriberHandler, subscriptionHandler, contentHandler)
@@ -76,10 +97,19 @@ func main() {
 		Handler: router,
 	}
 
+	// Start scheduler in background
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
+	go func() {
+		logger.Info("Starting job scheduler")
+		jobScheduler.Start(ctx)
+	}()
+
 	go func() {
 		logger.Info("Server starting", zap.String("addr", srv.Addr))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal("Failed to start server", zap.Error(err))
+			logger.Fatal("Server failed to start", zap.Error(err))
 		}
 	}()
 
@@ -89,10 +119,10 @@ func main() {
 
 	logger.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Fatal("Server forced to shutdown", zap.Error(err))
 	}
 

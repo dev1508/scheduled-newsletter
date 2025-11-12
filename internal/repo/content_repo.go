@@ -49,6 +49,32 @@ func (r *contentRepo) Create(ctx context.Context, req *request.CreateContentRequ
 	return &content, nil
 }
 
+func (r *contentRepo) CreateTx(ctx context.Context, tx pgx.Tx, req *request.CreateContentRequest) (*models.Content, error) {
+	query := `
+		INSERT INTO content (topic_id, subject, body, send_at)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, topic_id, subject, body, send_at, status, created_at, updated_at
+	`
+
+	var content models.Content
+	err := tx.QueryRow(ctx, query, req.TopicID, req.Subject, req.Body, req.SendAt).Scan(
+		&content.ID,
+		&content.TopicID,
+		&content.Subject,
+		&content.Body,
+		&content.SendAt,
+		&content.Status,
+		&content.CreatedAt,
+		&content.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create content in transaction: %w", err)
+	}
+
+	return &content, nil
+}
+
 func (r *contentRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Content, error) {
 	query := `
 		SELECT id, topic_id, subject, body, send_at, status, created_at, updated_at

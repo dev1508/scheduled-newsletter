@@ -94,6 +94,12 @@ const (
 	DefaultJobLimit    = 100
 )
 
+// Scheduler settings
+const (
+	DefaultSchedulerInterval = "30s"
+	DefaultSchedulerBatchSize = 100
+)
+
 // Environment variable keys
 const (
 	EnvKeyPort        = "PORT"
@@ -126,4 +132,17 @@ const (
 	EnvKeySMTPPassword  = "SMTP_PASSWORD"
 	EnvKeySMTPFromEmail = "SMTP_FROM_EMAIL"
 	EnvKeySMTPFromName  = "SMTP_FROM_NAME"
+)
+
+// Scheduler environment variable keys
+const (
+	EnvKeySchedulerInterval  = "SCHEDULER_INTERVAL"
+	EnvKeySchedulerBatchSize = "SCHEDULER_BATCH_SIZE"
+)
+
+// Asynq environment variable keys
+const (
+	EnvKeyAsynqRedisAddr     = "ASYNQ_REDIS_ADDR"
+	EnvKeyAsynqRedisPassword = "ASYNQ_REDIS_PASSWORD"
+	EnvKeyAsynqRedisDB       = "ASYNQ_REDIS_DB"
 )
