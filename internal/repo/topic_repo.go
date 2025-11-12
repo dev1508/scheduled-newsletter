@@ -6,19 +6,11 @@ import (
 
 	"newsletter-assignment/internal/db"
 	"newsletter-assignment/internal/models"
+	"newsletter-assignment/internal/request"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
-
-type TopicRepository interface {
-	Create(ctx context.Context, req *models.CreateTopicRequest) (*models.Topic, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*models.Topic, error)
-	GetByName(ctx context.Context, name string) (*models.Topic, error)
-	List(ctx context.Context, limit, offset int) ([]*models.Topic, error)
-	Update(ctx context.Context, id uuid.UUID, req *models.CreateTopicRequest) (*models.Topic, error)
-	Delete(ctx context.Context, id uuid.UUID) error
-}
 
 type topicRepo struct {
 	db *db.DB
@@ -30,7 +22,7 @@ func NewTopicRepository(database *db.DB) TopicRepository {
 	}
 }
 
-func (r *topicRepo) Create(ctx context.Context, req *models.CreateTopicRequest) (*models.Topic, error) {
+func (r *topicRepo) Create(ctx context.Context, req *request.CreateTopicRequest) (*models.Topic, error) {
 	query := `
 		INSERT INTO topics (name, description)
 		VALUES ($1, $2)
@@ -145,7 +137,7 @@ func (r *topicRepo) List(ctx context.Context, limit, offset int) ([]*models.Topi
 	return topics, nil
 }
 
-func (r *topicRepo) Update(ctx context.Context, id uuid.UUID, req *models.CreateTopicRequest) (*models.Topic, error) {
+func (r *topicRepo) Update(ctx context.Context, id uuid.UUID, req *request.UpdateTopicRequest) (*models.Topic, error) {
 	query := `
 		UPDATE topics
 		SET name = $2, description = $3, updated_at = NOW()

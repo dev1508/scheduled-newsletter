@@ -7,19 +7,11 @@ import (
 
 	"newsletter-assignment/internal/models"
 	"newsletter-assignment/internal/repo"
+	"newsletter-assignment/internal/request"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
-
-type TopicService interface {
-	CreateTopic(ctx context.Context, req *models.CreateTopicRequest) (*models.Topic, error)
-	GetTopic(ctx context.Context, id uuid.UUID) (*models.Topic, error)
-	GetTopicByName(ctx context.Context, name string) (*models.Topic, error)
-	ListTopics(ctx context.Context, limit, offset int) ([]*models.Topic, error)
-	UpdateTopic(ctx context.Context, id uuid.UUID, req *models.CreateTopicRequest) (*models.Topic, error)
-	DeleteTopic(ctx context.Context, id uuid.UUID) error
-}
 
 type topicService struct {
 	topicRepo repo.TopicRepository
@@ -33,7 +25,7 @@ func NewTopicService(topicRepo repo.TopicRepository, logger *zap.Logger) TopicSe
 	}
 }
 
-func (s *topicService) CreateTopic(ctx context.Context, req *models.CreateTopicRequest) (*models.Topic, error) {
+func (s *topicService) CreateTopic(ctx context.Context, req *request.CreateTopicRequest) (*models.Topic, error) {
 	// Validate and sanitize input
 	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
@@ -56,7 +48,7 @@ func (s *topicService) CreateTopic(ctx context.Context, req *models.CreateTopicR
 		return nil, err
 	}
 
-	s.logger.Info("Topic created successfully", 
+	s.logger.Info("Topic created successfully",
 		zap.String("id", topic.ID.String()),
 		zap.String("name", topic.Name),
 	)
@@ -105,7 +97,7 @@ func (s *topicService) ListTopics(ctx context.Context, limit, offset int) ([]*mo
 	return topics, nil
 }
 
-func (s *topicService) UpdateTopic(ctx context.Context, id uuid.UUID, req *models.CreateTopicRequest) (*models.Topic, error) {
+func (s *topicService) UpdateTopic(ctx context.Context, id uuid.UUID, req *request.UpdateTopicRequest) (*models.Topic, error) {
 	// Validate and sanitize input
 	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
@@ -128,7 +120,7 @@ func (s *topicService) UpdateTopic(ctx context.Context, id uuid.UUID, req *model
 		return nil, err
 	}
 
-	s.logger.Info("Topic updated successfully", 
+	s.logger.Info("Topic updated successfully",
 		zap.String("id", topic.ID.String()),
 		zap.String("name", topic.Name),
 	)

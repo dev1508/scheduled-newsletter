@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"newsletter-assignment/internal/models"
+	"newsletter-assignment/internal/request"
 	"newsletter-assignment/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ func NewTopicHandler(topicService service.TopicService, logger *zap.Logger) *Top
 }
 
 func (h *TopicHandler) CreateTopic(c *gin.Context) {
-	var req models.CreateTopicRequest
+	var req request.CreateTopicRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Invalid request payload", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -129,7 +129,7 @@ func (h *TopicHandler) UpdateTopic(c *gin.Context) {
 		return
 	}
 
-	var req models.CreateTopicRequest
+	var req request.UpdateTopicRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Invalid request payload", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{

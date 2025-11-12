@@ -4,6 +4,8 @@ import (
 	"os"
 	"strconv"
 
+	"newsletter-assignment/internal/constants"
+
 	"github.com/joho/godotenv"
 )
 
@@ -43,28 +45,28 @@ func Load() (*Config, error) {
 	}
 
 	cfg := &Config{
-		Port:        getEnv("PORT", "8080"),
-		Env:         getEnv("ENV", "development"),
-		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		DatabaseURL: getEnv("DATABASE_URL", ""),
+		Port:        getEnv(constants.EnvKeyPort, constants.DefaultPort),
+		Env:         getEnv(constants.EnvKeyEnvironment, constants.DefaultEnv),
+		LogLevel:    getEnv(constants.EnvKeyLogLevel, constants.DefaultLogLevel),
+		DatabaseURL: getEnv(constants.EnvKeyDatabaseURL, ""),
 	}
 
-	cfg.DB.Host = getEnv("DB_HOST", "localhost")
-	cfg.DB.Port = getEnv("DB_PORT", "5432")
-	cfg.DB.User = getEnv("DB_USER", "newsletter")
-	cfg.DB.Password = getEnv("DB_PASSWORD", "password")
-	cfg.DB.Name = getEnv("DB_NAME", "newsletter_db")
+	cfg.DB.Host = getEnv(constants.EnvKeyDBHost, constants.DefaultDBHost)
+	cfg.DB.Port = getEnv(constants.EnvKeyDBPort, constants.DefaultDBPort)
+	cfg.DB.User = getEnv(constants.EnvKeyDBUser, constants.DefaultDBUser)
+	cfg.DB.Password = getEnv(constants.EnvKeyDBPassword, constants.DefaultDBPassword)
+	cfg.DB.Name = getEnv(constants.EnvKeyDBName, constants.DefaultDBName)
 
-	cfg.Redis.Host = getEnv("REDIS_HOST", "localhost")
-	cfg.Redis.Port = getEnv("REDIS_PORT", "6379")
-	cfg.Redis.Password = getEnv("REDIS_PASSWORD", "")
+	cfg.Redis.Host = getEnv(constants.EnvKeyRedisHost, constants.DefaultRedisHost)
+	cfg.Redis.Port = getEnv(constants.EnvKeyRedisPort, constants.DefaultRedisPort)
+	cfg.Redis.Password = getEnv(constants.EnvKeyRedisPassword, "")
 
-	cfg.SMTP.Host = getEnv("SMTP_HOST", "smtp-relay.brevo.com")
-	cfg.SMTP.Port = getEnv("SMTP_PORT", "587")
-	cfg.SMTP.Username = getEnv("SMTP_USERNAME", "")
-	cfg.SMTP.Password = getEnv("SMTP_PASSWORD", "")
-	cfg.SMTP.FromEmail = getEnv("SMTP_FROM_EMAIL", "noreply@yourapp.com")
-	cfg.SMTP.FromName = getEnv("SMTP_FROM_NAME", "Newsletter App")
+	cfg.SMTP.Host = getEnv(constants.EnvKeySMTPHost, constants.DefaultSMTPHost)
+	cfg.SMTP.Port = getEnv(constants.EnvKeySMTPPort, constants.DefaultSMTPPort)
+	cfg.SMTP.Username = getEnv(constants.EnvKeySMTPUsername, "")
+	cfg.SMTP.Password = getEnv(constants.EnvKeySMTPPassword, "")
+	cfg.SMTP.FromEmail = getEnv(constants.EnvKeySMTPFromEmail, constants.DefaultSMTPFromEmail)
+	cfg.SMTP.FromName = getEnv(constants.EnvKeySMTPFromName, constants.DefaultSMTPFromName)
 
 	return cfg, nil
 }

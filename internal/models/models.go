@@ -15,11 +15,6 @@ type Topic struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-// CreateTopicRequest represents the request payload for creating a topic
-type CreateTopicRequest struct {
-	Name        string  `json:"name" binding:"required,min=1,max=255"`
-	Description *string `json:"description" binding:"omitempty,max=1000"`
-}
 
 // Subscriber represents an email subscriber
 type Subscriber struct {
