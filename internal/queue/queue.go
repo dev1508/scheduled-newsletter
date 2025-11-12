@@ -1,7 +1,9 @@
 package queue
 
 import (
+	"crypto/tls"
 	"encoding/json"
+	"strings"
 
 	"github.com/hibiken/asynq"
 )
@@ -33,6 +35,9 @@ func NewAsynqQueue(redisAddr, redisPassword string, redisDB int, logger interfac
 		Addr:     redisAddr,
 		Password: redisPassword,
 		DB:       redisDB,
+		TLSConfig: &tls.Config{
+			ServerName: extractHostFromAddr(redisAddr),
+		},
 	}
 
 	client := asynq.NewClient(redisOpt)
@@ -98,4 +103,13 @@ func (q *AsynqQueue) Stop() {
 // Shutdown gracefully shuts down the server
 func (q *AsynqQueue) Shutdown() {
 	q.server.Shutdown()
+}
+
+// extractHostFromAddr extracts hostname from Redis address for TLS ServerName
+func extractHostFromAddr(addr string) string {
+	// Remove port if present (e.g., "host:6379" -> "host")
+	if colonIndex := strings.LastIndex(addr, ":"); colonIndex != -1 {
+		return addr[:colonIndex]
+	}
+	return addr
 }
