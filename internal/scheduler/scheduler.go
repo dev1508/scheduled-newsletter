@@ -88,12 +88,15 @@ func (s *Scheduler) processJobs(ctx context.Context) {
 		return
 	}
 
+	s.logger.Info("Processing scheduled jobs", 
+		zap.Int("batch_size", s.batchSize))
+
 	if len(jobs) == 0 {
-		s.logger.Debug("No pending jobs found")
+		s.logger.Info("Found pending jobs", zap.Int("count", 0))
 		return
 	}
 
-	s.logger.Info("Processing pending jobs", zap.Int("count", len(jobs)))
+	s.logger.Info("Found pending jobs", zap.Int("count", len(jobs)))
 
 	for _, job := range jobs {
 		if err := s.processJob(ctx, job); err != nil {

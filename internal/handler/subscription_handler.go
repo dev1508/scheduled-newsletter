@@ -79,7 +79,7 @@ func (h *SubscriptionHandler) Unsubscribe(c *gin.Context) {
 		return
 	}
 
-	topicIDStr := c.Param("topic_id")
+	topicIDStr := c.Param("id")
 	topicID, err := uuid.Parse(topicIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -145,7 +145,7 @@ func (h *SubscriptionHandler) GetSubscription(c *gin.Context) {
 }
 
 func (h *SubscriptionHandler) ListSubscriberTopics(c *gin.Context) {
-	subscriberIDStr := c.Param("subscriber_id")
+	subscriberIDStr := c.Param("id")
 	subscriberID, err := uuid.Parse(subscriberIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -176,7 +176,7 @@ func (h *SubscriptionHandler) ListSubscriberTopics(c *gin.Context) {
 }
 
 func (h *SubscriptionHandler) ListTopicSubscribers(c *gin.Context) {
-	topicIDStr := c.Param("topic_id")
+	topicIDStr := c.Param("id")
 	topicID, err := uuid.Parse(topicIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

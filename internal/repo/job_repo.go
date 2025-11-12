@@ -8,7 +8,6 @@ import (
 	"newsletter-assignment/internal/constants"
 	"newsletter-assignment/internal/db"
 	"newsletter-assignment/internal/models"
-	"newsletter-assignment/internal/request"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -22,34 +21,6 @@ func NewJobRepository(database *db.DB) JobRepository {
 	return &jobRepo{
 		db: database,
 	}
-}
-
-func (r *jobRepo) Create(ctx context.Context, req *request.CreateJobRequest) (*models.JobScheduler, error) {
-	query := `
-		INSERT INTO job_scheduler (content_id, job_type, scheduled_at)
-		VALUES ($1, $2, $3)
-		RETURNING id, content_id, job_type, scheduled_at, status, attempts, max_attempts, error_message, created_at, updated_at
-	`
-
-	var job models.JobScheduler
-	err := r.db.Pool.QueryRow(ctx, query, req.ContentID, req.JobType, req.ScheduledAt).Scan(
-		&job.ID,
-		&job.ContentID,
-		&job.JobType,
-		&job.ScheduledAt,
-		&job.Status,
-		&job.Attempts,
-		&job.MaxAttempts,
-		&job.ErrorMessage,
-		&job.CreatedAt,
-		&job.UpdatedAt,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create job: %w", err)
-	}
-
-	return &job, nil
 }
 
 func (r *jobRepo) CreateTx(ctx context.Context, tx pgx.Tx, contentID uuid.UUID, jobType string, scheduledAt time.Time) (*models.JobScheduler, error) {

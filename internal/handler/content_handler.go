@@ -136,7 +136,7 @@ func (h *ContentHandler) ListContent(c *gin.Context) {
 }
 
 func (h *ContentHandler) ListContentByTopic(c *gin.Context) {
-	topicIDStr := c.Param("topic_id")
+	topicIDStr := c.Param("id")
 	topicID, err := uuid.Parse(topicIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

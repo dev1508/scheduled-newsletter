@@ -49,19 +49,3 @@ type ContentService interface {
 	ScheduleContent(ctx context.Context, contentID uuid.UUID) error
 }
 
-// DeliveryService defines the interface for delivery business logic
-type DeliveryService interface {
-	CreateDelivery(ctx context.Context, req *request.CreateDeliveryRequest) (*models.Delivery, error)
-	GetDelivery(ctx context.Context, id uuid.UUID) (*models.Delivery, error)
-	ListDeliveriesByContent(ctx context.Context, contentID uuid.UUID) ([]*models.Delivery, error)
-	ListDeliveriesBySubscriber(ctx context.Context, subscriberID uuid.UUID, limit, offset int) ([]*models.Delivery, error)
-	UpdateDeliveryStatus(ctx context.Context, id uuid.UUID, status string) error
-}
-
-// JobService defines the interface for job scheduling business logic
-type JobService interface {
-	CreateJob(ctx context.Context, req *request.CreateJobRequest) (*models.JobScheduler, error)
-	GetJob(ctx context.Context, id uuid.UUID) (*models.JobScheduler, error)
-	ProcessPendingJobs(ctx context.Context) error
-	UpdateJobStatus(ctx context.Context, id uuid.UUID, status string, attempts int, errorMessage *string) error
-}

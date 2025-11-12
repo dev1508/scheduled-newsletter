@@ -6,7 +6,6 @@ import (
 
 	"newsletter-assignment/internal/models"
 	"newsletter-assignment/internal/request"
-	"newsletter-assignment/internal/response"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -56,19 +55,9 @@ type ContentRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-// DeliveryRepository defines the interface for delivery data operations
-type DeliveryRepository interface {
-	Create(ctx context.Context, req *request.CreateDeliveryRequest) (*models.Delivery, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*models.Delivery, error)
-	ListByContent(ctx context.Context, contentID uuid.UUID) ([]*models.Delivery, error)
-	ListBySubscriber(ctx context.Context, subscriberID uuid.UUID, limit, offset int) ([]*models.Delivery, error)
-	UpdateStatus(ctx context.Context, id uuid.UUID, status string, sentAt *time.Time, errorMessage *string) error
-	GetStats(ctx context.Context, contentID uuid.UUID) (*response.DeliveryStats, error)
-}
 
 // JobRepository defines the interface for job scheduler data operations
 type JobRepository interface {
-	Create(ctx context.Context, req *request.CreateJobRequest) (*models.JobScheduler, error)
 	CreateTx(ctx context.Context, tx pgx.Tx, contentID uuid.UUID, jobType string, scheduledAt time.Time) (*models.JobScheduler, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.JobScheduler, error)
 	GetPendingJobs(ctx context.Context, limit int) ([]*models.JobScheduler, error)

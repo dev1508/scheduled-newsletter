@@ -50,10 +50,10 @@ func (h *Handler) SetupRoutes() *gin.Engine {
 			topics.DELETE("/:id", h.topicHandler.DeleteTopic)
 			
 			// Topic-specific subscription routes
-			topics.GET("/:topic_id/subscribers", h.subscriptionHandler.ListTopicSubscribers)
+			topics.GET("/:id/subscribers", h.subscriptionHandler.ListTopicSubscribers)
 			
 			// Topic-specific content routes
-			topics.GET("/:topic_id/content", h.contentHandler.ListContentByTopic)
+			topics.GET("/:id/content", h.contentHandler.ListContentByTopic)
 		}
 
 		// Subscriber routes
@@ -67,7 +67,7 @@ func (h *Handler) SetupRoutes() *gin.Engine {
 			subscribers.DELETE("/:id", h.subscriberHandler.DeleteSubscriber)
 			
 			// Subscriber-specific subscription routes
-			subscribers.GET("/:subscriber_id/topics", h.subscriptionHandler.ListSubscriberTopics)
+			subscribers.GET("/:id/topics", h.subscriptionHandler.ListSubscriberTopics)
 		}
 
 		// Subscription routes

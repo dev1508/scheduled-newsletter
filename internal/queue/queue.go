@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/hibiken/asynq"
@@ -18,11 +17,6 @@ type Queue interface {
 	Start() error
 	Stop()
 	Shutdown()
-}
-
-// TaskHandler defines the interface for task handlers
-type TaskHandler interface {
-	HandleSendContent(ctx context.Context, task *asynq.Task) error
 }
 
 // AsynqQueue implements the Queue interface using Asynq
