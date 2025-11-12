@@ -269,4 +269,4 @@ The system is designed to be free-tier friendly:
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
