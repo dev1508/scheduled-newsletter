@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Port     string
-	Env      string
-	LogLevel string
+	Port        string
+	Env         string
+	LogLevel    string
+	DatabaseURL string
 
 	DB struct {
 		Host     string
@@ -42,9 +43,10 @@ func Load() (*Config, error) {
 	}
 
 	cfg := &Config{
-		Port:     getEnv("PORT", "8080"),
-		Env:      getEnv("ENV", "development"),
-		LogLevel: getEnv("LOG_LEVEL", "info"),
+		Port:        getEnv("PORT", "8080"),
+		Env:         getEnv("ENV", "development"),
+		LogLevel:    getEnv("LOG_LEVEL", "info"),
+		DatabaseURL: getEnv("DATABASE_URL", ""),
 	}
 
 	cfg.DB.Host = getEnv("DB_HOST", "localhost")

@@ -10,8 +10,12 @@ import (
 	"time"
 
 	"newsletter-assignment/internal/config"
+	"newsletter-assignment/internal/db"
+	"newsletter-assignment/internal/handler"
 	httphandler "newsletter-assignment/internal/http"
 	"newsletter-assignment/internal/log"
+	"newsletter-assignment/internal/repo"
+	"newsletter-assignment/internal/service"
 	"newsletter-assignment/internal/version"
 
 	"go.uber.org/zap"
@@ -38,8 +42,25 @@ func main() {
 		zap.String("port", cfg.Port),
 	)
 
-	handler := httphandler.NewHandler()
-	router := handler.SetupRoutes()
+	// Initialize database
+	database, err := db.New(cfg.DatabaseURL, logger)
+	if err != nil {
+		logger.Fatal("Failed to connect to database", zap.Error(err))
+	}
+	defer database.Close()
+
+	// Initialize repositories
+	topicRepo := repo.NewTopicRepository(database)
+
+	// Initialize services
+	topicService := service.NewTopicService(topicRepo, logger)
+
+	// Initialize handlers
+	topicHandler := handler.NewTopicHandler(topicService, logger)
+
+	// Initialize HTTP handler with dependencies
+	httpHandler := httphandler.NewHandler(topicHandler)
+	router := httpHandler.SetupRoutes()
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
