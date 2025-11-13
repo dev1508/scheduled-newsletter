@@ -1,6 +1,7 @@
 package queue
 
 import (
+	// "crypto/tls"
 	"crypto/tls"
 	"encoding/json"
 	"strings"
@@ -30,18 +31,21 @@ type AsynqQueue struct {
 }
 
 // NewAsynqQueue creates a new Asynq-based queue
-func NewAsynqQueue(redisAddr, redisPassword string, redisDB int, logger interface{}) *AsynqQueue {
+func NewAsynqQueue(redisAddr, redisPassword string, redisDB int, tlsConfigNeeded bool, logger interface{}) *AsynqQueue {
 	redisOpt := asynq.RedisClientOpt{
 		Addr:     redisAddr,
 		Password: redisPassword,
 		DB:       redisDB,
-		TLSConfig: &tls.Config{
+	}
+
+	if tlsConfigNeeded {
+		redisOpt.TLSConfig = &tls.Config{
 			ServerName: extractHostFromAddr(redisAddr),
-		},
+		}
 	}
 
 	client := asynq.NewClient(redisOpt)
-	
+
 	server := asynq.NewServer(
 		redisOpt,
 		asynq.Config{

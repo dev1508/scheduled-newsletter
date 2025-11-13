@@ -14,8 +14,8 @@ import (
 	"newsletter-assignment/internal/handler"
 	httphandler "newsletter-assignment/internal/http"
 	"newsletter-assignment/internal/log"
-	"newsletter-assignment/internal/repo"
 	"newsletter-assignment/internal/queue"
+	"newsletter-assignment/internal/repo"
 	"newsletter-assignment/internal/scheduler"
 	"newsletter-assignment/internal/service"
 	"newsletter-assignment/internal/version"
@@ -75,6 +75,7 @@ func main() {
 		cfg.Asynq.RedisAddr,
 		cfg.Asynq.RedisPassword,
 		cfg.Asynq.RedisDB,
+		cfg.Asynq.TLSConfigNeeded,
 		logger,
 	)
 	defer jobQueue.Close()
@@ -100,7 +101,7 @@ func main() {
 	// Start scheduler in background
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	
+
 	go func() {
 		logger.Info("Starting job scheduler")
 		jobScheduler.Start(ctx)

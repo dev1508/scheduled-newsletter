@@ -39,11 +39,11 @@ type Config struct {
 	}
 
 	Email struct {
-		APIKey     string
-		BaseURL    string
-		UseHTTP    bool
-		FromEmail  string
-		FromName   string
+		APIKey    string
+		BaseURL   string
+		UseHTTP   bool
+		FromEmail string
+		FromName  string
 	}
 
 	Scheduler struct {
@@ -52,9 +52,10 @@ type Config struct {
 	}
 
 	Asynq struct {
-		RedisAddr     string
-		RedisPassword string
-		RedisDB       int
+		RedisAddr       string
+		RedisPassword   string
+		RedisDB         int
+		TLSConfigNeeded bool
 	}
 }
 
@@ -91,7 +92,7 @@ func Load() (*Config, error) {
 	cfg.Email.BaseURL = getEnv(constants.EnvKeyEmailAPIBaseURL, constants.DefaultEmailAPIBaseURL)
 	cfg.Email.UseHTTP = getEnvBool(constants.EnvKeyEmailUseHTTP, constants.DefaultEmailUseHTTP)
 	cfg.Email.FromEmail = getEnv(constants.EnvKeySMTPFromEmail, constants.DefaultSMTPFromEmail) // Reuse SMTP from email
-	cfg.Email.FromName = getEnv(constants.EnvKeySMTPFromName, constants.DefaultSMTPFromName)   // Reuse SMTP from name
+	cfg.Email.FromName = getEnv(constants.EnvKeySMTPFromName, constants.DefaultSMTPFromName)    // Reuse SMTP from name
 
 	cfg.Scheduler.Interval = getEnv(constants.EnvKeySchedulerInterval, constants.DefaultSchedulerInterval)
 	cfg.Scheduler.BatchSize = getEnvInt(constants.EnvKeySchedulerBatchSize, constants.DefaultSchedulerBatchSize)
@@ -99,6 +100,7 @@ func Load() (*Config, error) {
 	cfg.Asynq.RedisAddr = getEnv(constants.EnvKeyAsynqRedisAddr, constants.DefaultRedisHost+":"+constants.DefaultRedisPort)
 	cfg.Asynq.RedisPassword = getEnv(constants.EnvKeyAsynqRedisPassword, "")
 	cfg.Asynq.RedisDB = getEnvInt(constants.EnvKeyAsynqRedisDB, 0)
+	cfg.Asynq.TLSConfigNeeded = getEnvBool(constants.EnvKeyAsynqTLSConfigNeeded, false)
 
 	return cfg, nil
 }

@@ -39,7 +39,7 @@ const (
 // Email HTTP API configuration defaults
 const (
 	DefaultEmailAPIBaseURL = "https://api.brevo.com"
-	DefaultEmailUseHTTP    = false
+	DefaultEmailUseHTTP    = true
 )
 
 // Content status constants
@@ -74,9 +74,9 @@ const (
 
 // Pagination defaults
 const (
-	DefaultLimit    = 10
-	MaxLimit        = 100
-	DefaultOffset   = 0
+	DefaultLimit  = 10
+	MaxLimit      = 100
+	DefaultOffset = 0
 )
 
 // Validation constants
@@ -102,7 +102,7 @@ const (
 
 // Scheduler settings
 const (
-	DefaultSchedulerInterval = "30s"
+	DefaultSchedulerInterval  = "30s"
 	DefaultSchedulerBatchSize = 100
 )
 
@@ -155,7 +155,8 @@ const (
 
 // Asynq environment variable keys
 const (
-	EnvKeyAsynqRedisAddr     = "ASYNQ_REDIS_ADDR"
-	EnvKeyAsynqRedisPassword = "ASYNQ_REDIS_PASSWORD"
-	EnvKeyAsynqRedisDB       = "ASYNQ_REDIS_DB"
+	EnvKeyAsynqRedisAddr       = "ASYNQ_REDIS_ADDR"
+	EnvKeyAsynqRedisPassword   = "ASYNQ_REDIS_PASSWORD"
+	EnvKeyAsynqRedisDB         = "ASYNQ_REDIS_DB"
+	EnvKeyAsynqTLSConfigNeeded = "ASYNQ_TLS_CONFIG_NEEDED"
 )

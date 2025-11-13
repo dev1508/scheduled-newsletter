@@ -95,25 +95,24 @@ func main() {
 		cfg.Asynq.RedisAddr,
 		cfg.Asynq.RedisPassword,
 		cfg.Asynq.RedisDB,
+		cfg.Asynq.TLSConfigNeeded,
 		logger,
 	)
 
 	// Register task handlers
 	jobQueue.RegisterHandler(constants.JobTypeSendNewsletter, sendContentWorker.HandleSendContent)
 
-	// Start health check server for Render (if PORT is set)
-	if port := os.Getenv("PORT"); port != "" {
-		go func() {
-			http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("Worker is healthy"))
-			})
-			logger.Info("Starting health check server", zap.String("port", port))
-			if err := http.ListenAndServe(":"+port, nil); err != nil {
-				logger.Error("Health check server failed", zap.Error(err))
-			}
-		}()
-	}
+	// Start health check server for Render
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Worker is healthy"))
+		})
+		logger.Info("Starting health check server", zap.String("port", "8081"))
+		if err := http.ListenAndServe(":8081", nil); err != nil {
+			logger.Error("Health check server failed", zap.Error(err))
+		}
+	}()
 
 	// Start server in goroutine
 	go func() {
