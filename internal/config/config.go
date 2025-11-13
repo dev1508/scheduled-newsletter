@@ -38,6 +38,14 @@ type Config struct {
 		FromName  string
 	}
 
+	Email struct {
+		APIKey     string
+		BaseURL    string
+		UseHTTP    bool
+		FromEmail  string
+		FromName   string
+	}
+
 	Scheduler struct {
 		Interval  string
 		BatchSize int
@@ -79,6 +87,12 @@ func Load() (*Config, error) {
 	cfg.SMTP.FromEmail = getEnv(constants.EnvKeySMTPFromEmail, constants.DefaultSMTPFromEmail)
 	cfg.SMTP.FromName = getEnv(constants.EnvKeySMTPFromName, constants.DefaultSMTPFromName)
 
+	cfg.Email.APIKey = getEnv(constants.EnvKeyEmailAPIKey, "")
+	cfg.Email.BaseURL = getEnv(constants.EnvKeyEmailAPIBaseURL, constants.DefaultEmailAPIBaseURL)
+	cfg.Email.UseHTTP = getEnvBool(constants.EnvKeyEmailUseHTTP, constants.DefaultEmailUseHTTP)
+	cfg.Email.FromEmail = getEnv(constants.EnvKeySMTPFromEmail, constants.DefaultSMTPFromEmail) // Reuse SMTP from email
+	cfg.Email.FromName = getEnv(constants.EnvKeySMTPFromName, constants.DefaultSMTPFromName)   // Reuse SMTP from name
+
 	cfg.Scheduler.Interval = getEnv(constants.EnvKeySchedulerInterval, constants.DefaultSchedulerInterval)
 	cfg.Scheduler.BatchSize = getEnvInt(constants.EnvKeySchedulerBatchSize, constants.DefaultSchedulerBatchSize)
 
@@ -100,6 +114,15 @@ func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			return boolValue
 		}
 	}
 	return defaultValue

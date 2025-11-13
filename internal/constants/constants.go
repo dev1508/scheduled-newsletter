@@ -36,6 +36,12 @@ const (
 	DefaultSMTPFromName  = "Newsletter App"
 )
 
+// Email HTTP API configuration defaults
+const (
+	DefaultEmailAPIBaseURL = "https://api.brevo.com"
+	DefaultEmailUseHTTP    = false
+)
+
 // Content status constants
 const (
 	ContentStatusScheduled = "scheduled"
@@ -132,6 +138,13 @@ const (
 	EnvKeySMTPPassword  = "SMTP_PASSWORD"
 	EnvKeySMTPFromEmail = "SMTP_FROM_EMAIL"
 	EnvKeySMTPFromName  = "SMTP_FROM_NAME"
+)
+
+// Email HTTP API environment variable keys
+const (
+	EnvKeyEmailAPIKey     = "EMAIL_API_KEY"
+	EnvKeyEmailAPIBaseURL = "EMAIL_API_BASE_URL"
+	EnvKeyEmailUseHTTP    = "EMAIL_USE_HTTP"
 )
 
 // Scheduler environment variable keys

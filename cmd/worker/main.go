@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -53,7 +54,7 @@ func main() {
 	jobRepo := repo.NewJobRepository(database)
 	deliveryRepo := repo.NewDeliveryRepository(database)
 
-	// Initialize SMTP sender
+	// Initialize unified email sender (supports both SMTP and HTTP API)
 	smtpConfig := &email.SMTPConfig{
 		Host:      cfg.SMTP.Host,
 		Port:      cfg.SMTP.Port,
@@ -62,7 +63,21 @@ func main() {
 		FromEmail: cfg.SMTP.FromEmail,
 		FromName:  cfg.SMTP.FromName,
 	}
-	emailSender := email.NewSMTPSender(smtpConfig, logger)
+
+	httpConfig := &email.HTTPConfig{
+		APIKey:    cfg.Email.APIKey,
+		FromEmail: cfg.Email.FromEmail,
+		FromName:  cfg.Email.FromName,
+		BaseURL:   cfg.Email.BaseURL,
+	}
+
+	unifiedConfig := &email.UnifiedConfig{
+		SMTP:    smtpConfig,
+		HTTP:    httpConfig,
+		UseHTTP: cfg.Email.UseHTTP,
+	}
+
+	emailSender := email.NewUnifiedEmailSender(unifiedConfig, logger)
 
 	// Initialize worker
 	sendContentWorker := worker.NewSendContentWorker(
@@ -86,10 +101,24 @@ func main() {
 	// Register task handlers
 	jobQueue.RegisterHandler(constants.JobTypeSendNewsletter, sendContentWorker.HandleSendContent)
 
+	// Start health check server for Render (if PORT is set)
+	if port := os.Getenv("PORT"); port != "" {
+		go func() {
+			http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("Worker is healthy"))
+			})
+			logger.Info("Starting health check server", zap.String("port", port))
+			if err := http.ListenAndServe(":"+port, nil); err != nil {
+				logger.Error("Health check server failed", zap.Error(err))
+			}
+		}()
+	}
+
 	// Start server in goroutine
 	go func() {
 		if err := jobQueue.Start(); err != nil {
-			logger.Fatal("Failed to start Asynq server", zap.Error(err))
+			logger.Fatal("Failed to start Asynq worker server", zap.Error(err))
 		}
 	}()
 

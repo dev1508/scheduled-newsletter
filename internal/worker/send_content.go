@@ -30,7 +30,7 @@ type SendContentWorker struct {
 	subscriberRepo   repo.SubscriberRepository
 	jobRepo          repo.JobRepository
 	deliveryRepo     repo.DeliveryRepository
-	emailSender      *email.SMTPSender
+	emailSender      email.EmailSender
 	logger           *zap.Logger
 }
 
@@ -41,7 +41,7 @@ func NewSendContentWorker(
 	subscriberRepo repo.SubscriberRepository,
 	jobRepo repo.JobRepository,
 	deliveryRepo repo.DeliveryRepository,
-	emailSender *email.SMTPSender,
+	emailSender email.EmailSender,
 	logger *zap.Logger,
 ) *SendContentWorker {
 	return &SendContentWorker{
