@@ -36,6 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer logger.Sync()
+	
 
 	logger.Info("Starting newsletter API server",
 		zap.String("version", version.Version),
